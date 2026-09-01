@@ -1,3 +1,6 @@
+## 0.0.7
+* Fixed README image cache preview
+
 ## 0.0.6
 * **CRITICAL FIX**: Resolved a notification collision issue in nested scroll views where horizontal scroll actions erroneously triggered orthogonal vertical scrollbar animations and metric updates.
 * **FIX**: Fixed an issue where the scrollbar thumb, track, and glowing shader particles remained visible when content did not exceed the viewport boundary (`maxScrollExtent <= 0`).
