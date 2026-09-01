@@ -247,17 +247,14 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
     if (metrics.viewportDimension <= 0) return;
 
     final totalContent = metrics.maxScrollExtent + metrics.viewportDimension;
-    final naturalRatio = totalContent > 0
-        ? metrics.viewportDimension / totalContent
-        : 0.2;
+    final naturalRatio =
+        totalContent > 0 ? metrics.viewportDimension / totalContent : 0.2;
     final minThumbRatio = (50.0 / metrics.viewportDimension).clamp(0.06, 0.25);
     final viewPortRatio = naturalRatio.clamp(minThumbRatio, 0.40);
 
     if (metrics.maxScrollExtent > 0) {
-      _scrollFraction = (metrics.pixels / metrics.maxScrollExtent).clamp(
-        0.0,
-        1.0,
-      );
+      _scrollFraction =
+          (metrics.pixels / metrics.maxScrollExtent).clamp(0.0, 1.0);
     } else {
       _scrollFraction = 0.0;
     }
@@ -269,7 +266,10 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
       _displayThumbTop = _targetThumbTop;
       _displayThumbBottom = _targetThumbBottom;
       _metricsInitialized = true;
-      if (mounted) setState(() {});
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
     }
   }
 
@@ -349,9 +349,9 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
     final deltaFraction = delta / scrollableRange;
     final targetPixels =
         (position.pixels + deltaFraction * position.maxScrollExtent).clamp(
-          0.0,
-          position.maxScrollExtent,
-        );
+      0.0,
+      position.maxScrollExtent,
+    );
 
     position.jumpTo(targetPixels);
     _triggerActivity(delta * 2.5);
@@ -386,9 +386,9 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
 
     final showTooltip =
         (widget.tooltipConfig.mode == ScrollbarTooltipMode.alwaysOnScroll &&
-            _displayActivity > 0.05) ||
-        (widget.tooltipConfig.mode == ScrollbarTooltipMode.onDragOnly &&
-            _isDragging);
+                _displayActivity > 0.05) ||
+            (widget.tooltipConfig.mode == ScrollbarTooltipMode.onDragOnly &&
+                _isDragging);
 
     double? top, bottom, left, right, width, height;
     if (isHoriz) {
@@ -434,40 +434,35 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
               height: height,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final trackDimension = isHoriz
-                      ? constraints.maxWidth
-                      : constraints.maxHeight;
+                  final trackDimension =
+                      isHoriz ? constraints.maxWidth : constraints.maxHeight;
 
                   final gestureDetector = GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart: isHoriz
-                        ? (_) => _onDragStart()
-                        : null,
+                    onHorizontalDragStart:
+                        isHoriz ? (_) => _onDragStart() : null,
                     onHorizontalDragUpdate: isHoriz
                         ? (d) => _onDragUpdate(d.delta.dx, trackDimension)
                         : null,
                     onHorizontalDragEnd: isHoriz ? (_) => _onDragEnd() : null,
-                    onHorizontalDragCancel: isHoriz
-                        ? () => _onDragCancel()
-                        : null,
-                    onVerticalDragStart: !isHoriz
-                        ? (_) => _onDragStart()
-                        : null,
+                    onHorizontalDragCancel:
+                        isHoriz ? () => _onDragCancel() : null,
+                    onVerticalDragStart:
+                        !isHoriz ? (_) => _onDragStart() : null,
                     onVerticalDragUpdate: !isHoriz
                         ? (d) => _onDragUpdate(d.delta.dy, trackDimension)
                         : null,
                     onVerticalDragEnd: !isHoriz ? (_) => _onDragEnd() : null,
-                    onVerticalDragCancel: !isHoriz
-                        ? () => _onDragCancel()
-                        : null,
+                    onVerticalDragCancel:
+                        !isHoriz ? () => _onDragCancel() : null,
                     child: Align(
                       alignment: isHoriz
                           ? (widget.alignment == ScrollbarAlignment.top
-                                ? Alignment.topCenter
-                                : Alignment.bottomCenter)
+                              ? Alignment.topCenter
+                              : Alignment.bottomCenter)
                           : (widget.alignment == ScrollbarAlignment.left
-                                ? Alignment.centerLeft
-                                : Alignment.centerRight),
+                              ? Alignment.centerLeft
+                              : Alignment.centerRight),
                       child: SizedBox(
                         width: isHoriz
                             ? trackDimension
