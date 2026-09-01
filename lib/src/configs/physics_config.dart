@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// Configuration for responsiveness, inertia damping, haptic feedback, and input handling.
 class ScrollPhysicsConfig {
   /// Smooth damping interpolation factor (0.10 to 0.50).
