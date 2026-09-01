@@ -1,3 +1,9 @@
+## 0.0.6
+* **CRITICAL FIX**: Resolved a notification collision issue in nested scroll views where horizontal scroll actions erroneously triggered orthogonal vertical scrollbar animations and metric updates.
+* **FIX**: Fixed an issue where the scrollbar thumb, track, and glowing shader particles remained visible when content did not exceed the viewport boundary (`maxScrollExtent <= 0`).
+* **IMPROVEMENT**: Added automatic smooth fade-out animations when content is not scrollable, dynamically restoring visibility upon viewport resizing or list expansion.
+* **UX FIX**: Wrapped non-scrollable states in `IgnorePointer` to prevent phantom touch interception over underlying clickable UI elements.
+
 ## 0.0.5
 * **FIX**: Fixed an issue where the scrollbar thumb and particle effects remained visible when the content did not exceed the viewport boundary (`maxScrollExtent <= 0`).
 * **IMPROVEMENT**: Added automatic, smooth fade-out animations when content is not scrollable, dynamically fading back in upon window resize or list expansion.

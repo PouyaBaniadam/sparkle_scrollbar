@@ -17,20 +17,66 @@ import '../painters/shader_scrollbar_painter.dart';
 import 'scroll_tooltip_bubble.dart';
 
 /// A customizable, GPU-accelerated scrollbar with dynamic particle effects.
+///
+/// Wraps any scrollable widget (such as [ListView], [GridView], or [SingleChildScrollView])
+/// to provide glowing shaders, dynamic sparks, tactile haptics, and multi-axis support.
+///
+/// ### Basic Usage Example:
+/// ```dart
+/// SparkleScrollbar(
+///   child: ListView.builder(
+///     itemCount: 50,
+///     itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+///   ),
+/// );
+/// ```
 class SparkleScrollbar extends StatefulWidget {
+  /// The scrollable child widget to attach the scrollbar to.
   final Widget child;
+
+  /// The scrolling orientation direction of the scrollbar.
+  ///
+  /// * [Axis.vertical] (Default): Positions the scrollbar along the left or right edge.
+  /// * [Axis.horizontal]: Positions the scrollbar along the top or bottom edge.
   final Axis orientation;
+
+  /// The visual thickness width/height of the visible scrollbar track in pixels. Default is `40.0`.
   final double scrollbarThickness;
+
+  /// The interactive touch and gesture detection boundary thickness.
+  ///
+  /// Making this larger than [scrollbarThickness] makes dragging significantly easier
+  /// on mobile touch screens without increasing the visual size of the bar. Default is `48.0`.
   final double hitAreaThickness;
+
+  /// Outer padding margin around the scrollbar track relative to the viewport.
   final EdgeInsets margin;
+
+  /// The placement side of the scrollbar along the viewport boundary.
+  ///
+  /// * Vertical: [ScrollbarAlignment.right] or [ScrollbarAlignment.left].
+  /// * Horizontal: [ScrollbarAlignment.bottom] or [ScrollbarAlignment.top].
   final ScrollbarAlignment alignment;
+
+  /// The rendering engine mode: [ScrollbarRenderMode.shader] (GPU) or [ScrollbarRenderMode.classic] (Canvas).
   final ScrollbarRenderMode renderMode;
+
+  /// Styling and material configuration for the draggable thumb capsule.
   final ThumbConfig thumbConfig;
+
+  /// Configuration for emitted sparks, particle counts, and geometry shapes.
   final ParticleConfig particleConfig;
+
+  /// Styling options for the background groove track.
   final TrackConfig trackConfig;
+
+  /// Physics interpolation, inertia damping, auto-hide timers, and haptics.
   final ScrollPhysicsConfig physicsConfig;
+
+  /// Floating position tooltip indicator configuration.
   final ScrollTooltipConfig tooltipConfig;
 
+  /// Creates a [SparkleScrollbar] to wrap any scrollable widget.
   const SparkleScrollbar({
     super.key,
     required this.child,
@@ -105,14 +151,18 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
     }
   }
 
+  // Traverses descendant elements to find the primary direct ScrollableState
   ScrollableState? _findDescendantScrollable(BuildContext? context) {
     if (context == null) return null;
     ScrollableState? found;
     void visitor(Element element) {
       if (found != null) return;
       if (element is StatefulElement && element.state is ScrollableState) {
-        found = element.state as ScrollableState;
-        return;
+        final state = element.state as ScrollableState;
+        if (state.widget.axis == widget.orientation) {
+          found = state;
+          return;
+        }
       }
       element.visitChildren(visitor);
     }
@@ -218,7 +268,17 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.depth == 0 && notification.context != null) {
+    // Isolate axis: Ignore bubbled notifications from orthogonal scroll views
+    if (notification.metrics.axis != widget.orientation) {
+      return false;
+    }
+
+    // Isolate depth: Only process primary direct scroll notifications
+    if (notification.depth != 0) {
+      return false;
+    }
+
+    if (notification.context != null) {
       _scrollableState = Scrollable.maybeOf(notification.context!);
     }
 
@@ -288,7 +348,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
         widget.renderMode == ScrollbarRenderMode.shader && program != null;
     final isHoriz = widget.orientation == Axis.horizontal;
 
-    // بررسی اینکه آیا محتوا فراتر از صفحه رفته و نیاز به اسکرول دارد یا نه
+    // Determines if the scroll view contains enough content to require scrolling
     final bool canScroll = _metricsInitialized && _maxPixels > 0.0;
 
     final cleanChild = Listener(
@@ -334,6 +394,12 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
       onNotification: _handleScrollNotification,
       child: NotificationListener<ScrollMetricsNotification>(
         onNotification: (metricsNotification) {
+          // Isolate metric notifications from nested or orthogonal scroll views
+          if (metricsNotification.metrics.axis != widget.orientation ||
+              metricsNotification.depth != 0) {
+            return false;
+          }
+
           _updateMetrics(
             metricsNotification.metrics,
             immediate: !_metricsInitialized,
@@ -427,7 +493,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
                     ),
                   );
 
-                  // اگر نیازی به اسکرول نباشد یا auto-hidden باشد، اوپاسیتی صفر می‌شود
+                  // Automatically fade out and disable hit testing when content is not scrollable
                   return AnimatedOpacity(
                     opacity: (_isAutoHidden || !canScroll) ? 0.0 : 1.0,
                     duration: const Duration(milliseconds: 250),
