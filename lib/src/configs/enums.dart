@@ -20,6 +20,9 @@ enum ParticleShape {
 
   /// Pixelated retro square box.
   square,
+
+  /// Glossy translucent floating soap bubble with specular highlights.
+  bubble,
 }
 
 /// Positioning alignment of the scrollbar along the viewport boundary.

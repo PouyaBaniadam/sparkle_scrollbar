@@ -21,7 +21,7 @@ uniform float uSparkCount;           // 21: Active particle count (0 to 50)
 uniform float uSparkMinSize;         // 22: Minimum particle radius
 uniform float uSparkMaxSize;         // 23: Maximum particle radius
 uniform float uSparkSpeed;           // 24: Particle ejection speed multiplier
-uniform float uSparkShape;           // 25: Shape mode (0: Circle, 1: Star, 2: Diamond, 3: Square)
+uniform float uSparkShape;           // 25: Shape mode (0: Circle, 1: Star, 2: Diamond, 3: Square, 4: Bubble)
 uniform float uColorShiftEnabled;    // 26: Flag to enable velocity color shift (1.0 = on, 0.0 = off)
 uniform float uGripNotchCount;       // 27: Center mechanical grip notch count (0.0, 1.0, 3.0)
 uniform float uWaveEffect;           // 28: Flag for animated traveling light wave (1.0 = on, 0.0 = off)
@@ -87,14 +87,10 @@ void main() {
         float dx = (p.x - 0.5) / thumbRadius;
         float normalZ = sqrt(max(0.0, 1.0 - dx * dx));
 
-        // Base metallic gradient with saturated color retention
         vec3 bodyCol = mix(uThumbColor * 0.6, uThumbColor * 1.15, normalZ * 0.7 + 0.3);
-
-        // Specular lighting reflection maintaining saturated tint
         float specLine = pow(max(0.0, 1.0 - abs(dx + 0.32) * 2.0), 3.0) * 0.35;
         bodyCol += mix(uGlowColor, vec3(1.0), 0.3) * specLine;
 
-        // Mechanical grip notches
         if (uGripNotchCount > 0.5) {
             float centerY = (capA.y + capB.y) * 0.5;
             float dY = abs(p.y - centerY);
@@ -108,7 +104,6 @@ void main() {
             bodyCol += uGlowColor * notches * notchMask * uActivity * 0.9;
         }
 
-        // Sinusoidal light wave moving across the thumb body
         if (uWaveEffect > 0.5) {
             float wave = 0.5 + 0.5 * sin(p.y * 5.0 - uTime * 4.0);
             bodyCol = mix(bodyCol, uGlowColor * 1.3, wave * (0.15 + normSpeed * 0.35) * uActivity);
@@ -119,7 +114,6 @@ void main() {
         alpha = max(alpha, thumbAlpha);
     }
 
-    // Outer Aura Glow
     float thumbGlow = smoothstep(0.18, 0.0, max(0.0, thumbDist)) * (0.08 + uActivity * 0.35);
     col += uGlowColor * thumbGlow;
     alpha = max(alpha, thumbGlow * 0.5);
@@ -153,6 +147,11 @@ void main() {
             float scatter = 0.06 + 0.20 * progress * seed2;
             float x = 0.5 + side * scatter;
 
+            // Side-to-side wobble effect specifically for bubbles (Shape 4)
+            if (uSparkShape > 3.5) {
+                x += sin(progress * 8.0 + id * 3.0) * 0.04;
+            }
+
             vec2 deltaP = p - vec2(x, y);
             float d = length(deltaP);
 
@@ -160,8 +159,21 @@ void main() {
             float core = 0.0;
             float halo = 0.0;
 
-            // Geometry Shape 1: 4-Point Star Flare
-            if (uSparkShape > 0.5 && uSparkShape < 1.5) {
+            // Geometry Shape 4: Glossy Translucent Bubble with Specular Highlight
+            if (uSparkShape > 3.5) {
+                float r = sizeP * 1.2;
+                float dist = d / r;
+                float body = smoothstep(1.0, 0.9, dist) * 0.15;
+                float rim = smoothstep(1.0, 0.85, dist) - smoothstep(0.85, 0.6, dist);
+                core = body + rim * 0.95;
+
+                vec2 highlightOffset = vec2(-0.35, 0.35) * r;
+                float highlight = smoothstep(r * 0.35, 0.0, length(deltaP - highlightOffset));
+                core = max(core, highlight * 0.95);
+                halo = smoothstep(r * 1.5, r, d) * 0.25;
+            }
+                // Geometry Shape 1: 4-Point Star Flare
+            else if (uSparkShape > 0.5 && uSparkShape < 1.5) {
                 float rayX = max(0.0, 1.0 - abs(deltaP.y) / (sizeP * 0.25)) * max(0.0, 1.0 - abs(deltaP.x) / (sizeP * 2.2));
                 float rayY = max(0.0, 1.0 - abs(deltaP.x) / (sizeP * 0.25)) * max(0.0, 1.0 - abs(deltaP.y) / (sizeP * 2.2));
                 float centerDot = smoothstep(sizeP * 0.5, 0.0, d);

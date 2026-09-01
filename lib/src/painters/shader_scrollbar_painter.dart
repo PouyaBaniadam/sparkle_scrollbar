@@ -1,7 +1,5 @@
 import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-
 import '../configs/enums.dart';
 import '../configs/particle_config.dart';
 import '../configs/thumb_config.dart';
@@ -65,17 +63,11 @@ class ShaderScrollbarPainter extends CustomPainter {
 
     // 16..18: Velocity Shift Color (RGB)
     shader.setFloat(
-      idx++,
-      ((particleConfig.velocityShiftColor.r * 255).round() / 255.0),
-    );
+        idx++, ((particleConfig.velocityShiftColor.r * 255).round() / 255.0));
     shader.setFloat(
-      idx++,
-      ((particleConfig.velocityShiftColor.g * 255).round() / 255.0),
-    );
+        idx++, ((particleConfig.velocityShiftColor.g * 255).round() / 255.0));
     shader.setFloat(
-      idx++,
-      ((particleConfig.velocityShiftColor.b * 255).round() / 255.0),
-    );
+        idx++, ((particleConfig.velocityShiftColor.b * 255).round() / 255.0));
 
     // 19..20: Thickness and Intensity
     shader.setFloat(idx++, thumbConfig.thickness);
@@ -87,12 +79,13 @@ class ShaderScrollbarPainter extends CustomPainter {
     shader.setFloat(idx++, particleConfig.maxSize);
     shader.setFloat(idx++, particleConfig.speed);
 
-    // 25: Particle Shape Mode
+    // 25: Particle Shape Mode (0: circle, 1: star, 2: diamond, 3: square, 4: bubble)
     final shapeVal = switch (particleConfig.shape) {
       ParticleShape.circle => 0.0,
       ParticleShape.star => 1.0,
       ParticleShape.diamond => 2.0,
       ParticleShape.square => 3.0,
+      ParticleShape.bubble => 4.0,
     };
     shader.setFloat(idx++, shapeVal);
 
