@@ -1,3 +1,8 @@
+## 0.0.5
+* **FIX**: Fixed an issue where the scrollbar thumb and particle effects remained visible when the content did not exceed the viewport boundary (`maxScrollExtent <= 0`).
+* **IMPROVEMENT**: Added automatic, smooth fade-out animations when content is not scrollable, dynamically fading back in upon window resize or list expansion.
+* **UX FIX**: Wrapped non-scrollable states with `IgnorePointer` to prevent phantom gesture interception over underlying UI elements.
+
 ## 0.0.4
 * **CRITICAL FIX**: Resolved a severe framework assertion error (`!semantics.parentDataDirty` and UI freezing) caused by synchronous `setState` calls during the layout phase.
 * Safely deferred scroll metric layout updates using `addPostFrameCallback` to ensure perfect compatibility with heavily nested and complex widget trees (like `ShaderMask`, `Flex`, and `SilkyScroll`).
