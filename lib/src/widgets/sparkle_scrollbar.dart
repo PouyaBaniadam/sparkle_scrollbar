@@ -21,59 +21,26 @@ import 'scroll_tooltip_bubble.dart';
 /// Wraps any scrollable widget (such as [ListView], [GridView], [SingleChildScrollView],
 /// or [TextField]) to provide glowing shaders, dynamic sparks, tactile haptics,
 /// and multi-axis support.
-///
-/// ### Basic Usage Example:
-/// ```dart
-/// SparkleScrollbar(
-///   child: ListView.builder(
-///     itemCount: 50,
-///     itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
-///   ),
-/// );
-/// ```
-///
-/// ### Explicit Controller Binding:
-/// ```dart
-/// SparkleScrollbar(
-///   controller: myScrollController,
-///   child: TextField(
-///     scrollController: myScrollController,
-///     maxLines: 6,
-///   ),
-/// );
-/// ```
 class SparkleScrollbar extends StatefulWidget {
   /// The scrollable child widget to attach the scrollbar to.
   final Widget child;
 
   /// An optional [ScrollController] that directly drives this scrollbar.
-  ///
-  /// Specifying this avoids automatic tree traversal and guarantees accurate
-  /// metric tracking for widgets like [TextField] or deeply nested scrollables.
   final ScrollController? controller;
 
   /// The scrolling orientation direction of the scrollbar.
-  ///
-  /// * [Axis.vertical] (Default): Positions the scrollbar along the left or right edge.
-  /// * [Axis.horizontal]: Positions the scrollbar along the top or bottom edge.
   final Axis orientation;
 
   /// The visual thickness width/height of the visible scrollbar track in pixels. Default is `40.0`.
   final double scrollbarThickness;
 
-  /// The interactive touch and gesture detection boundary thickness.
-  ///
-  /// Making this larger than [scrollbarThickness] makes dragging significantly easier
-  /// on touch screens without increasing the visual size of the bar. Default is `48.0`.
+  /// The interactive touch and gesture detection boundary thickness. Default is `48.0`.
   final double hitAreaThickness;
 
   /// Outer padding margin around the scrollbar track relative to the viewport.
   final EdgeInsets margin;
 
   /// The placement side of the scrollbar along the viewport boundary.
-  ///
-  /// * Vertical: [ScrollbarAlignment.right] or [ScrollbarAlignment.left].
-  /// * Horizontal: [ScrollbarAlignment.bottom] or [ScrollbarAlignment.top].
   final ScrollbarAlignment alignment;
 
   /// The rendering engine mode: [ScrollbarRenderMode.shader] (GPU) or [ScrollbarRenderMode.classic] (Canvas).
@@ -145,12 +112,17 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   bool _isAutoHidden = false;
   bool _metricsInitialized = false;
 
-  /// Resolves the active [ScrollPosition], prioritizing the explicit controller if provided.
+  /// Safely resolves the active [ScrollPosition] with content dimensions ready.
   ScrollPosition? get _effectivePosition {
     if (widget.controller != null && widget.controller!.hasClients) {
-      return widget.controller!.position;
+      final position = widget.controller!.position;
+      if (position.hasContentDimensions) return position;
     }
-    return _scrollableState?.position;
+    if (_scrollableState != null &&
+        _scrollableState!.position.hasContentDimensions) {
+      return _scrollableState!.position;
+    }
+    return null;
   }
 
   @override
@@ -192,7 +164,10 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
 
   void _onExplicitControllerNotification() {
     if (widget.controller != null && widget.controller!.hasClients) {
-      _updateMetrics(widget.controller!.position);
+      final pos = widget.controller!.position;
+      if (pos.hasContentDimensions) {
+        _updateMetrics(pos);
+      }
     }
   }
 
@@ -218,7 +193,10 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
 
   void _initScrollableRef() {
     if (widget.controller != null && widget.controller!.hasClients) {
-      _updateMetrics(widget.controller!.position, immediate: true);
+      final pos = widget.controller!.position;
+      if (pos.hasContentDimensions) {
+        _updateMetrics(pos, immediate: true);
+      }
       return;
     }
 
@@ -254,10 +232,14 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   }
 
   void _updateMetrics(ScrollMetrics metrics, {bool immediate = false}) {
+    // Crucial safety check: ensure dimensions exist before reading extents
+    if (!metrics.hasContentDimensions || metrics.viewportDimension <= 0) {
+      return;
+    }
+
     final oldMaxPixels = _maxPixels;
     _currentPixels = metrics.pixels;
     _maxPixels = metrics.maxScrollExtent;
-    if (metrics.viewportDimension <= 0) return;
 
     final totalContent = metrics.maxScrollExtent + metrics.viewportDimension;
     final naturalRatio =
@@ -393,7 +375,6 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
         widget.renderMode == ScrollbarRenderMode.shader && program != null;
     final isHoriz = widget.orientation == Axis.horizontal;
 
-    // Determines if the scroll view contains enough content to require scrolling
     final bool canScroll = _metricsInitialized && _maxPixels > 0.0;
 
     final cleanChild = Listener(
@@ -439,7 +420,6 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
       onNotification: _handleScrollNotification,
       child: NotificationListener<ScrollMetricsNotification>(
         onNotification: (metricsNotification) {
-          // Isolate metric notifications from nested or orthogonal scroll views
           if (metricsNotification.metrics.axis != widget.orientation ||
               metricsNotification.depth != 0) {
             return false;
@@ -538,7 +518,6 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
                     ),
                   );
 
-                  // Automatically fade out and disable hit testing when content is not scrollable
                   return AnimatedOpacity(
                     opacity: (_isAutoHidden || !canScroll) ? 0.0 : 1.0,
                     duration: const Duration(milliseconds: 250),

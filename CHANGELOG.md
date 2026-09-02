@@ -1,3 +1,9 @@
+## 0.0.9
+
+### Fixed
+* **CRITICAL FIX**: Resolved a `Null check operator used on a null value` framework crash when reading `maxScrollExtent` before content dimensions are resolved (`hasContentDimensions == false`), ensuring rock-solid stability with `TextField` and un-laid-out scrollables.
+
+
 ## 0.0.8
 
 ### Added
