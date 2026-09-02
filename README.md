@@ -1,6 +1,6 @@
 # Sparkle Scrollbar
 
-A breathtaking, high-performance, GPU-accelerated custom scrollbar for Flutter powered by GLSL fragment shaders. It brings fluid liquid motion, dynamic particle sparks, and tactile haptic feedback to your scrollable views.
+A breathtaking, high-performance, GPU-accelerated custom scrollbar for Flutter powered by GLSL fragment shaders. It brings fluid motion, dynamic particle sparks, and tactile haptic feedback to your scrollable views.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/PouyaBaniadam/sparkle_scrollbar/refs/heads/main/assets/demoexample.gif" width="900" alt="Sparkle Scrollbar Demo">

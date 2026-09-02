@@ -18,8 +18,9 @@ import 'scroll_tooltip_bubble.dart';
 
 /// A customizable, GPU-accelerated scrollbar with dynamic particle effects.
 ///
-/// Wraps any scrollable widget (such as [ListView], [GridView], or [SingleChildScrollView])
-/// to provide glowing shaders, dynamic sparks, tactile haptics, and multi-axis support.
+/// Wraps any scrollable widget (such as [ListView], [GridView], [SingleChildScrollView],
+/// or [TextField]) to provide glowing shaders, dynamic sparks, tactile haptics,
+/// and multi-axis support.
 ///
 /// ### Basic Usage Example:
 /// ```dart
@@ -30,9 +31,26 @@ import 'scroll_tooltip_bubble.dart';
 ///   ),
 /// );
 /// ```
+///
+/// ### Explicit Controller Binding:
+/// ```dart
+/// SparkleScrollbar(
+///   controller: myScrollController,
+///   child: TextField(
+///     scrollController: myScrollController,
+///     maxLines: 6,
+///   ),
+/// );
+/// ```
 class SparkleScrollbar extends StatefulWidget {
   /// The scrollable child widget to attach the scrollbar to.
   final Widget child;
+
+  /// An optional [ScrollController] that directly drives this scrollbar.
+  ///
+  /// Specifying this avoids automatic tree traversal and guarantees accurate
+  /// metric tracking for widgets like [TextField] or deeply nested scrollables.
+  final ScrollController? controller;
 
   /// The scrolling orientation direction of the scrollbar.
   ///
@@ -46,7 +64,7 @@ class SparkleScrollbar extends StatefulWidget {
   /// The interactive touch and gesture detection boundary thickness.
   ///
   /// Making this larger than [scrollbarThickness] makes dragging significantly easier
-  /// on mobile touch screens without increasing the visual size of the bar. Default is `48.0`.
+  /// on touch screens without increasing the visual size of the bar. Default is `48.0`.
   final double hitAreaThickness;
 
   /// Outer padding margin around the scrollbar track relative to the viewport.
@@ -80,6 +98,7 @@ class SparkleScrollbar extends StatefulWidget {
   const SparkleScrollbar({
     super.key,
     required this.child,
+    this.controller,
     this.orientation = Axis.vertical,
     this.scrollbarThickness = 40.0,
     this.hitAreaThickness = 48.0,
@@ -126,6 +145,14 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   bool _isAutoHidden = false;
   bool _metricsInitialized = false;
 
+  /// Resolves the active [ScrollPosition], prioritizing the explicit controller if provided.
+  ScrollPosition? get _effectivePosition {
+    if (widget.controller != null && widget.controller!.hasClients) {
+      return widget.controller!.position;
+    }
+    return _scrollableState?.position;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -145,13 +172,31 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
       if (mounted) setState(() {});
     });
 
+    widget.controller?.addListener(_onExplicitControllerNotification);
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _initScrollableRef());
     if (widget.renderMode == ScrollbarRenderMode.shader) {
       _loadShader();
     }
   }
 
-  // Traverses descendant elements to find the primary direct ScrollableState
+  @override
+  void didUpdateWidget(covariant SparkleScrollbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?.removeListener(_onExplicitControllerNotification);
+      widget.controller?.addListener(_onExplicitControllerNotification);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _initScrollableRef());
+    }
+  }
+
+  void _onExplicitControllerNotification() {
+    if (widget.controller != null && widget.controller!.hasClients) {
+      _updateMetrics(widget.controller!.position);
+    }
+  }
+
+  /// Traverses descendant elements to find the primary direct ScrollableState.
   ScrollableState? _findDescendantScrollable(BuildContext? context) {
     if (context == null) return null;
     ScrollableState? found;
@@ -172,6 +217,11 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   }
 
   void _initScrollableRef() {
+    if (widget.controller != null && widget.controller!.hasClients) {
+      _updateMetrics(widget.controller!.position, immediate: true);
+      return;
+    }
+
     _scrollableState = _findDescendantScrollable(_childKey.currentContext);
     if (_scrollableState != null &&
         _scrollableState!.position.hasContentDimensions) {
@@ -278,7 +328,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
       return false;
     }
 
-    if (notification.context != null) {
+    if (notification.context != null && widget.controller == null) {
       _scrollableState = Scrollable.maybeOf(notification.context!);
     }
 
@@ -296,11 +346,8 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
         widget.orientation == Axis.horizontal &&
         event.scrollDelta.dx == 0 &&
         event.scrollDelta.dy != 0) {
-      _scrollableState ??= _findDescendantScrollable(_childKey.currentContext);
-
-      if (_scrollableState == null) return;
-      final position = _scrollableState!.position;
-      if (position.maxScrollExtent <= 0) return;
+      final position = _effectivePosition;
+      if (position == null || position.maxScrollExtent <= 0) return;
 
       final targetPixels = (position.pixels + event.scrollDelta.dy).clamp(
         0.0,
@@ -312,11 +359,8 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
   }
 
   void _onDragUpdate(double delta, double trackDimension) {
-    _scrollableState ??= _findDescendantScrollable(_childKey.currentContext);
-
-    if (_scrollableState == null) return;
-    final position = _scrollableState!.position;
-    if (position.maxScrollExtent <= 0) return;
+    final position = _effectivePosition;
+    if (position == null || position.maxScrollExtent <= 0) return;
 
     final thumbLength = (_targetThumbBottom - _targetThumbTop) * trackDimension;
     final scrollableRange = trackDimension - thumbLength;
@@ -335,6 +379,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_onExplicitControllerNotification);
     _decayTimer?.cancel();
     _autoHideTimer?.cancel();
     _ticker.dispose();

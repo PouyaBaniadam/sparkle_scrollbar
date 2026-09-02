@@ -1,3 +1,11 @@
+## 0.0.8
+
+### Added
+* **Explicit `ScrollController` Support**: Added `controller` parameter to `SparkleScrollbar` widget.
+    * Allows seamless synchronization with `TextField`, `CustomScrollView`, and complex nested scrollables.
+    * Avoids ambiguous descendant tree traversal when multiple scrollables exist.
+    * Enhances thumb dragging precision and real-time metric responsiveness.
+
 ## 0.0.7
 * Fixed README image cache preview
 
