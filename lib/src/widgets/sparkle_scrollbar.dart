@@ -432,7 +432,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
           return false;
         },
         child: Stack(
-          fit: StackFit.expand,
+          fit: StackFit.passthrough,
           children: [
             KeyedSubtree(key: _childKey, child: cleanChild),
             Positioned(

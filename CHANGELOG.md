@@ -1,3 +1,9 @@
+## 0.0.10
+
+### Fixed
+* **CRITICAL FIX**: Resolved a `BoxConstraints forces an infinite height` layout assertion error caused by `StackFit.expand` when the scrollbar was wrapped inside unconstrained cross-axis layouts (such as `Row`, `Column`, or `Flex` parents with an `Expanded` child).
+* Updated internal stack fit behavior to `StackFit.passthrough`, allowing non-positioned children (such as `TextField` or auto-sized containers) to safely calculate their natural dimensions without crashing the render pipeline.
+
 ## 0.0.9
 
 ### Fixed
