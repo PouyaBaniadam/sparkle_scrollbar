@@ -1,6 +1,6 @@
 name: sparkle_scrollbar
 description: A customizable GPU-accelerated particle and glow shader scrollbar for Flutter with multi-axis support and haptic feedback.
-version: 0.0.9
+version: 0.0.11
 homepage: https://github.com/PouyaBaniadam/sparkle_scrollbar
 
 environment:
