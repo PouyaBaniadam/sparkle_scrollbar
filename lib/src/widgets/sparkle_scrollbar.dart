@@ -16,6 +16,31 @@ import '../painters/classic_scrollbar_painter.dart';
 import '../painters/shader_scrollbar_painter.dart';
 import 'scroll_tooltip_bubble.dart';
 
+/// A custom [ScrollBehavior] that suppresses the platform-default scrollbar on desktop and web,
+/// ensuring only [SparkleScrollbar] is rendered without visual collision or duplication.
+class _SparkleScrollBehavior extends ScrollBehavior {
+  final ScrollBehavior _parentBehavior;
+
+  const _SparkleScrollBehavior(this._parentBehavior);
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    // Explicitly bypass Flutter's automatic desktop/web scrollbar injection.
+    return child;
+  }
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => _parentBehavior.dragDevices;
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      _parentBehavior.getScrollPhysics(context);
+}
+
 /// A customizable, GPU-accelerated scrollbar with dynamic particle effects.
 ///
 /// Wraps any scrollable widget (such as [ListView], [GridView], [SingleChildScrollView],
@@ -377,6 +402,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
 
     final bool canScroll = _metricsInitialized && _maxPixels > 0.0;
 
+    // Wrap the child with a custom ScrollBehavior to suppress default desktop platform scrollbars
     final cleanChild = Listener(
       onPointerSignal: (pointerSignal) {
         if (pointerSignal is PointerScrollEvent) {
@@ -384,7 +410,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
         }
       },
       child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        behavior: _SparkleScrollBehavior(ScrollConfiguration.of(context)),
         child: widget.child,
       ),
     );

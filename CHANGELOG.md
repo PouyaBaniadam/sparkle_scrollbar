@@ -1,3 +1,9 @@
+## 0.0.12
+
+### Fixed
+* **DESKTOP / WEB FIX**: Resolved a duplicate scrollbar collision issue on desktop platforms (Linux, macOS, Windows) and Web.
+* Implemented a dedicated `_SparkleScrollBehavior` that explicitly suppresses Flutter's automatic platform scrollbar injection (`buildScrollbar`), ensuring only `SparkleScrollbar` is rendered while fully preserving inherited drag devices and scroll physics.
+
 ## 0.0.11
 
 * Nothing just a version match.
