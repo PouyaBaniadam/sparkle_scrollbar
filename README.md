@@ -26,7 +26,7 @@ Add `sparkle_scrollbar` to your `pubspec.yaml` dependencies:
 
 ```yaml
 dependencies:
-  sparkle_scrollbar: ^0.0.1
+  sparkle_scrollbar: ^0.0.13
 ```
 
 ---
