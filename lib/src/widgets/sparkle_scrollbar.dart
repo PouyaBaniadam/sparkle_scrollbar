@@ -473,73 +473,98 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
                   final trackDimension =
                       isHoriz ? constraints.maxWidth : constraints.maxHeight;
 
-                  final gestureDetector = GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onHorizontalDragStart:
-                        isHoriz && canScroll ? (_) => _onDragStart() : null,
-                    onHorizontalDragUpdate: isHoriz && canScroll
-                        ? (d) => _onDragUpdate(d.delta.dx, trackDimension)
-                        : null,
-                    onHorizontalDragEnd:
-                        isHoriz && canScroll ? (_) => _onDragEnd() : null,
-                    onHorizontalDragCancel:
-                        isHoriz && canScroll ? () => _onDragCancel() : null,
-                    onVerticalDragStart:
-                        !isHoriz && canScroll ? (_) => _onDragStart() : null,
-                    onVerticalDragUpdate: !isHoriz && canScroll
-                        ? (d) => _onDragUpdate(d.delta.dy, trackDimension)
-                        : null,
-                    onVerticalDragEnd:
-                        !isHoriz && canScroll ? (_) => _onDragEnd() : null,
-                    onVerticalDragCancel:
-                        !isHoriz && canScroll ? () => _onDragCancel() : null,
-                    child: Align(
-                      alignment: isHoriz
-                          ? (widget.alignment == ScrollbarAlignment.top
-                              ? Alignment.topCenter
-                              : Alignment.bottomCenter)
-                          : (widget.alignment == ScrollbarAlignment.left
-                              ? Alignment.centerLeft
-                              : Alignment.centerRight),
-                      child: SizedBox(
-                        width: isHoriz
-                            ? trackDimension
-                            : widget.scrollbarThickness,
-                        height: isHoriz
-                            ? widget.scrollbarThickness
-                            : trackDimension,
-                        child: CustomPaint(
-                          size: Size(
-                            isHoriz
-                                ? trackDimension
-                                : widget.scrollbarThickness,
-                            isHoriz
-                                ? widget.scrollbarThickness
-                                : trackDimension,
+                  final visualCanvas = CustomPaint(
+                    size: Size(
+                      isHoriz ? trackDimension : widget.scrollbarThickness,
+                      isHoriz ? widget.scrollbarThickness : trackDimension,
+                    ),
+                    painter: isShaderMode
+                        ? ShaderScrollbarPainter(
+                            shader: program.fragmentShader(),
+                            time: _time,
+                            thumbTop: _displayThumbTop,
+                            thumbBottom: _displayThumbBottom,
+                            activity: _displayActivity,
+                            velocity: _displayVelocity,
+                            orientation: widget.orientation,
+                            thumbConfig: widget.thumbConfig,
+                            particleConfig: widget.particleConfig,
+                            trackConfig: widget.trackConfig,
+                          )
+                        : ClassicScrollbarPainter(
+                            thumbTop: _displayThumbTop,
+                            thumbBottom: _displayThumbBottom,
+                            activity: _displayActivity,
+                            orientation: widget.orientation,
+                            alignment: widget.alignment,
+                            thumbConfig: widget.thumbConfig,
+                            trackConfig: widget.trackConfig,
                           ),
-                          painter: isShaderMode
-                              ? ShaderScrollbarPainter(
-                                  shader: program.fragmentShader(),
-                                  time: _time,
-                                  thumbTop: _displayThumbTop,
-                                  thumbBottom: _displayThumbBottom,
-                                  activity: _displayActivity,
-                                  velocity: _displayVelocity,
-                                  orientation: widget.orientation,
-                                  thumbConfig: widget.thumbConfig,
-                                  particleConfig: widget.particleConfig,
-                                  trackConfig: widget.trackConfig,
-                                )
-                              : ClassicScrollbarPainter(
-                                  thumbTop: _displayThumbTop,
-                                  thumbBottom: _displayThumbBottom,
-                                  activity: _displayActivity,
-                                  orientation: widget.orientation,
-                                  alignment: widget.alignment,
-                                  thumbConfig: widget.thumbConfig,
-                                  trackConfig: widget.trackConfig,
-                                ),
-                        ),
+                  );
+
+                  final exactHitWidth = (widget.scrollbarThickness *
+                          widget.thumbConfig.thickness *
+                          3.5)
+                      .clamp(12.0, 20.0);
+
+                  final hitBox = MouseRegion(
+                    cursor: SystemMouseCursors.grab,
+                    onEnter: (_) {
+                      if (!canScroll) return;
+                      _isHovered = true;
+                      _targetActivity = 0.6;
+                      _wakeUpTicker();
+                    },
+                    onExit: (_) {
+                      _isHovered = false;
+                      if (!_isDragging) _targetActivity = 0.0;
+                    },
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onHorizontalDragStart:
+                          isHoriz && canScroll ? (_) => _onDragStart() : null,
+                      onHorizontalDragUpdate: isHoriz && canScroll
+                          ? (d) => _onDragUpdate(d.delta.dx, trackDimension)
+                          : null,
+                      onHorizontalDragEnd:
+                          isHoriz && canScroll ? (_) => _onDragEnd() : null,
+                      onHorizontalDragCancel:
+                          isHoriz && canScroll ? () => _onDragCancel() : null,
+                      onVerticalDragStart:
+                          !isHoriz && canScroll ? (_) => _onDragStart() : null,
+                      onVerticalDragUpdate: !isHoriz && canScroll
+                          ? (d) => _onDragUpdate(d.delta.dy, trackDimension)
+                          : null,
+                      onVerticalDragEnd:
+                          !isHoriz && canScroll ? (_) => _onDragEnd() : null,
+                      onVerticalDragCancel:
+                          !isHoriz && canScroll ? () => _onDragCancel() : null,
+                      child: SizedBox(
+                        width: isHoriz ? trackDimension : exactHitWidth,
+                        height: isHoriz ? exactHitWidth : trackDimension,
+                      ),
+                    ),
+                  );
+
+                  final combinedBox = Align(
+                    alignment: isHoriz
+                        ? (widget.alignment == ScrollbarAlignment.top
+                            ? Alignment.topCenter
+                            : Alignment.bottomCenter)
+                        : (widget.alignment == ScrollbarAlignment.left
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight),
+                    child: SizedBox(
+                      width:
+                          isHoriz ? trackDimension : widget.scrollbarThickness,
+                      height:
+                          isHoriz ? widget.scrollbarThickness : trackDimension,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          visualCanvas,
+                          hitBox,
+                        ],
                       ),
                     ),
                   );
@@ -552,20 +577,7 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          MouseRegion(
-                            cursor: SystemMouseCursors.grab,
-                            onEnter: (_) {
-                              if (!canScroll) return;
-                              _isHovered = true;
-                              _targetActivity = 0.6;
-                              _wakeUpTicker();
-                            },
-                            onExit: (_) {
-                              _isHovered = false;
-                              if (!_isDragging) _targetActivity = 0.0;
-                            },
-                            child: gestureDetector,
-                          ),
+                          combinedBox,
                           ScrollTooltipBubble(
                             thumbTop: _displayThumbTop,
                             thumbBottom: _displayThumbBottom,

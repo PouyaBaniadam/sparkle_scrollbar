@@ -1,3 +1,9 @@
+## 0.0.15
+
+### Fixed
+* **HITBOX ACCURACY FIX**: Separated the visual rendering canvas from the interactive gesture area.
+* The `MouseRegion` and `GestureDetector` hitboxes are now dynamically calculated to match the exact thickness of the scrollbar thumb. This prevents accidental hover and drag interactions when the mouse cursor is 10-15 pixels away, while preserving the wide canvas needed for particle and glow shader effects.
+
 ## 0.0.14
 
 ## 0.0.13
