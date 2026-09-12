@@ -63,7 +63,7 @@ class SparkleScrollbar extends StatefulWidget {
   final double hitAreaThickness;
 
   /// Outer padding margin around the scrollbar track relative to the viewport.
-  final EdgeInsets margin;
+  final EdgeInsetsGeometry margin;
 
   /// The placement side of the scrollbar along the viewport boundary.
   final ScrollbarAlignment alignment;
@@ -421,24 +421,26 @@ class _SparkleScrollbarState extends State<SparkleScrollbar>
             (widget.tooltipConfig.mode == ScrollbarTooltipMode.onDragOnly &&
                 _isDragging));
 
+    final resolvedMargin = widget.margin.resolve(Directionality.of(context));
+
     double? top, bottom, left, right, width, height;
     if (isHoriz) {
-      left = widget.margin.left;
-      right = widget.margin.right;
+      left = resolvedMargin.left;
+      right = resolvedMargin.right;
       height = widget.hitAreaThickness;
       if (widget.alignment == ScrollbarAlignment.top) {
-        top = widget.margin.top;
+        top = resolvedMargin.top;
       } else {
-        bottom = widget.margin.bottom;
+        bottom = resolvedMargin.bottom;
       }
     } else {
-      top = widget.margin.top;
-      bottom = widget.margin.bottom;
+      top = resolvedMargin.top;
+      bottom = resolvedMargin.bottom;
       width = widget.hitAreaThickness;
       if (widget.alignment == ScrollbarAlignment.left) {
-        left = widget.margin.left;
+        left = resolvedMargin.left;
       } else {
-        right = widget.margin.right;
+        right = resolvedMargin.right;
       }
     }
 
